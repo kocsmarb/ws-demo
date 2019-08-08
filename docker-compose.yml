@@ -1,0 +1,55 @@
+version: '3.1'
+
+services:
+  db:
+    container_name: ws-db
+    image: postgres
+    restart: always
+    # Enabled only on the docker network
+    # ports:
+    #  - 5432:5432
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: developer
+      POSTGRES_USER: developer
+      POSTGRES_DB: developer
+
+  middleware:
+    image: kocsmarbdev/ws-middleware
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 4000:4000
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: developer
+      DB_PASSWORD: developer
+      DB_DATABASE: developer
+      JWT_PRIVATE_KEY: my-secret-jwt-key
+      JWT_EXPIRES_IN: 3d
+      HASH_GEN_SALT: my-secret-hash-gen-salt
+
+  app:
+    image: kocsmarbdev/ws-app
+    restart: always
+    depends_on:
+      - middleware
+    ports:
+      - 80:4000
+    environment:
+      REACT_APP_GRAPHQL_BASE_URL: http://localhost:4000
+      REACT_APP_APP_TITLE: FoodMap
+      REACT_APP_BASKET_PRICE_LIMIT: 20000
+      REACT_APP_BASKET_ERROR_PRICE: 10000
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  db-data:
